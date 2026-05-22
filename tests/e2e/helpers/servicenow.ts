@@ -57,7 +57,9 @@ export async function clickFirstVisible(
     }
   }
 
-  await page.screenshot({ path: `test-results/${slugify(stepName)}-not-found.png`, fullPage: true });
+  if (!page.isClosed()) {
+    await page.screenshot({ path: `test-results/${slugify(stepName)}-not-found.png`, fullPage: true });
+  }
   throw new Error(`Unable to find a visible clickable candidate for step: ${stepName}`);
 }
 

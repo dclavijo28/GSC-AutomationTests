@@ -1,0 +1,65 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GSC Regression Runner</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="toolbar" aria-label="Regression controls">
+      <div>
+        <h1>GSC Regression Runner</h1>
+        <p>Search, select, and rerun local Playwright regression tests.</p>
+      </div>
+      <div class="toolbar-actions">
+        <button id="startAuth" class="button secondary" type="button">Refresh GSCTEST Auth</button>
+        <button id="saveAuth" class="button secondary" type="button">Save Auth</button>
+        <button id="cancelAuth" class="button ghost" type="button">Cancel Auth</button>
+        <a id="reportLink" class="button secondary" href="/report/index.html">Official Playwright Report</a>
+        <button id="refreshTests" class="button secondary" type="button">Refresh</button>
+      </div>
+    </section>
+
+    <section class="panel controls" aria-label="Test selection">
+      <label class="search-label" for="searchInput">Search tests</label>
+      <input id="searchInput" type="search" placeholder="Search by test name, suite, or file">
+      <div class="selection-row">
+        <span id="selectionCount">0 selected</span>
+        <button id="selectVisible" class="button ghost" type="button">Select visible</button>
+        <button id="selectAll" class="button ghost" type="button">Select all</button>
+        <button id="clearSelection" class="button ghost" type="button">Clear</button>
+      </div>
+      <div id="authStatus" class="auth-status">GSCTEST auth refresh is idle.</div>
+    </section>
+
+    <section class="content-grid">
+      <section class="panel" aria-label="Available tests">
+        <div class="panel-header">
+          <h2>Available Tests</h2>
+          <span id="testCount" class="muted">Loading...</span>
+        </div>
+        <div id="testList" class="test-list"></div>
+      </section>
+
+      <section class="panel" aria-label="Run results">
+        <div class="panel-header">
+          <h2>Run</h2>
+          <span id="runStatus" class="status idle">Idle</span>
+        </div>
+        <div class="run-actions">
+          <button id="runSelected" class="button primary" type="button">Run selected</button>
+          <button id="runAll" class="button secondary" type="button">Run all</button>
+          <button id="rerunLast" class="button secondary" type="button">Rerun last</button>
+        </div>
+        <div id="summary" class="summary"></div>
+        <h3>Console Output</h3>
+        <pre id="output" class="output">No run yet.</pre>
+      </section>
+    </section>
+  </main>
+
+  <script type="module" src="/assets/app.js"></script>
+</body>
+</html>

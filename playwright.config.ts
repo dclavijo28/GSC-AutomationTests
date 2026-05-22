@@ -4,6 +4,11 @@ export default defineConfig({
   testDir: "./tests/e2e",
   timeout: 60_000,
   workers: 1,
+  reporter: [
+    ["list"],
+    ["html", { outputFolder: "playwright-report", open: "never" }],
+    ["json", { outputFile: "test-results/latest-results.json" }]
+  ],
   expect: {
     timeout: 15_000
   },
@@ -15,6 +20,9 @@ export default defineConfig({
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
-    viewport: { width: 1600, height: 900 }
+    viewport: null,
+    launchOptions: {
+      args: ["--start-maximized", "--window-position=0,0"]
+    }
   }
 });

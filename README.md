@@ -39,10 +39,41 @@ You can also set `SN_GSCTEST_STORAGE_STATE` to another local auth-state file bef
    - Working directory: repository root
 4. Run `tests/e2e/csas-case-sidebar.spec.ts`, or use the npm script below.
 
+## Regression Runner App
+
+Run the local regression app when you want to search, select, run, rerun, and review tests from a browser:
+
+```powershell
+npm run app
+```
+
+Then open:
+
+```text
+http://localhost:4555
+```
+
+The app lists tests from `tests/e2e`, supports selected or full regression runs, shows the latest console output, and links to the official Playwright HTML report at `/report/index.html`.
+
+If a run says the saved GSCTEST auth state redirected to MFA, use the app buttons:
+
+1. Click `Refresh GSCTEST Auth`.
+2. Complete login and MFA in the Chrome window that opens.
+3. Return to the app and click `Save Auth`.
+4. Rerun the test.
+
+Tests marked `Writes GSCTEST` create or update records in ServiceNow GSCTEST. The app asks for explicit confirmation before running them. From PowerShell, set the confirmation token before running a write-capable test directly:
+
+```powershell
+$env:CONFIRM_GSCTEST_WRITES = "GSCTEST"
+npm run test:genesys-inapp
+```
 
 ## Current Coverage
 
 `tests/e2e/csas-case-sidebar.spec.ts` opens the CSLUS case type as the baseline and then validates the CSAS case type against the same sidebar tools and action behavior.
+
+`tests/e2e/genesys-inapp-case.spec.ts` creates a LUS case with Short description `Test Automation STRY0482100`, Assignment group `GSD-Genesys`, Reply to `mlssupport@churchofjesuschrist.org`, saves it, selects the `Debeach` consumer, sets Channel `In-App`, saves again, finds the created case from the open cases list, validates that the Genesys Call ID is populated, and attaches a final screenshot.
 
 Baseline CSLUS case:
 
@@ -59,6 +90,8 @@ https://sn-gsctest.churchofjesuschrist.org/now/cwf/agent/record/x_tcoj2_church_c
 
 ```powershell
 npm run auth:gsctest
+npm run app
 npm run test:e2e
 npm run test:csas-sidebar
+npm run test:genesys-inapp
 ```
