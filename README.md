@@ -2,6 +2,60 @@
 
 Automation tests for GSC ServiceNow workflows.
 
+## Branch And PR Strategy
+
+Use one branch per automation story or feature.
+
+Recommended names:
+
+- `GSCTEST-CSAS-Sidebar`
+- `GSCTEST-LUS-case-with-GSD-Genesys`
+- `GSCTEST-STRY0482100-Genesys`
+- `GSCTEST-<short-feature-name>`
+
+Important rule:
+
+- always create new story branches from `main`
+- avoid starting a new story branch from another feature branch unless that dependency is intentional
+
+What can go in a story branch:
+
+- the Playwright test for that story
+- helper updates required for that story
+- regression app updates needed to run or manage that story test
+- small documentation updates related to that work
+
+What should stay out of a story branch:
+
+- unrelated story work
+- broad refactors not needed for the story
+- multiple unfinished features mixed into one PR
+
+What belongs in `main`:
+
+- stable regression app behavior
+- stable shared helpers
+- stable Playwright configuration
+- stable tests ready for normal team use
+
+Recommended workflow:
+
+1. Update local `main`.
+2. Create a new story branch from `main`.
+3. Build the automation test.
+4. Run and verify locally.
+5. Push the branch to GitHub.
+6. Open a PR with the story summary.
+7. Continue polishing on the same branch.
+8. Merge only when the shared version is clean enough for `main`.
+
+To avoid losing code:
+
+- push every story branch to GitHub
+- open a PR for each meaningful story branch
+- keep branches until the story history is no longer needed
+- avoid doing long-running work only in a local branch
+
 ## Playwright Setup
 
 The shared Playwright configuration matches the ServiceNow workspace checks used from WebStorm:
