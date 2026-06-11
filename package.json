@@ -1,0 +1,21 @@
+{
+  "name": "gsc-automation-tests",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Playwright automation tests for GSC ServiceNow workflows.",
+  "scripts": {
+    "app": "node scripts/regression-runner-app.mjs",
+    "auth:gsctest": "node scripts/save-gsctest-auth.mjs",
+    "regression:app": "node scripts/regression-runner-app.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:csas-sidebar": "playwright test tests/e2e/csas-case-sidebar.spec.ts",
+    "test:genesys-inapp": "playwright test tests/e2e/genesys-inapp-case.spec.ts",
+    "playwright:install": "playwright install"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.2",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.5.4"
+  }
+}

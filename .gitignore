@@ -53,3 +53,13 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# Node and Playwright
+node_modules/
+playwright/.auth/
+playwright-report/
+test-results/
+blob-report/
+.env
+.env.*
+.idea/
