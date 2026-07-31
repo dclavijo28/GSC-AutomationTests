@@ -1,3 +1,3 @@
 ﻿import { saveServiceNowAuth } from "./save-servicenow-auth.mjs";
 
-await saveServiceNowAuth("gsctest");
+await saveServiceNowAuth("gscdev");

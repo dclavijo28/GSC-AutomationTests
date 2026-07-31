@@ -1,4 +1,10 @@
 ﻿import { expect, type Locator, type Page } from "@playwright/test";
+import {
+  ensureServiceNowInteractiveLogin,
+  getServiceNowLoginSnapshot,
+  isServiceNowLoginSnapshot,
+  type ServiceNowLoginOptions,
+} from "./servicenow-login";
 
 const refreshGsctestAuthMessage =
   "Saved GSCTEST auth state redirected to MFA. Refresh and save playwright/.auth/gsctest-state.json, then rerun this test.";
@@ -17,28 +23,45 @@ export async function waitForServiceNowReady(
   page: Page,
   readyLocator: Locator,
   timeoutMessage: string,
-  timeoutMs = 30_000
+  timeoutMs = 30_000,
+  loginOptions: ServiceNowLoginOptions = {}
 ): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
   const authenticatorHeading = page.getByRole("heading", { name: /Authenticator/i });
 
-  const result = await Promise.race([
-    readyLocator
-      .waitFor({ state: "visible", timeout: timeoutMs })
-      .then(() => "ready")
-      .catch(() => "timeout"),
-    authenticatorHeading
-      .waitFor({ state: "visible", timeout: timeoutMs })
-      .then(() => "mfa")
-      .catch(() => "timeout")
-  ]);
+  while (Date.now() < deadline) {
+    if (await readyLocator.isVisible().catch(() => false)) {
+      return;
+    }
 
-  if (result === "mfa") {
-    throw new Error(refreshGsctestAuthMessage);
+    if (await authenticatorHeading.isVisible().catch(() => false)) {
+      const handled = await ensureServiceNowInteractiveLogin(page, {
+        ...loginOptions,
+        resumeUrl: loginOptions.resumeUrl ?? page.url(),
+      }).catch(() => false);
+      if (handled && (await readyLocator.isVisible().catch(() => false))) {
+        return;
+      }
+      throw new Error(refreshGsctestAuthMessage);
+    }
+
+    const snapshot = await getServiceNowLoginSnapshot(page);
+    if (isServiceNowLoginSnapshot(snapshot)) {
+      const handled = await ensureServiceNowInteractiveLogin(page, {
+        ...loginOptions,
+        loginUrl: loginOptions.loginUrl ?? snapshot.url,
+        resumeUrl: loginOptions.resumeUrl ?? page.url(),
+      });
+
+      if (handled && (await readyLocator.isVisible().catch(() => false))) {
+        return;
+      }
+    }
+
+    await page.waitForTimeout(500);
   }
 
-  if (result === "timeout") {
-    throw new Error(timeoutMessage);
-  }
+  throw new Error(timeoutMessage);
 }
 
 export async function clickFirstVisible(
@@ -94,14 +117,14 @@ export function sidebarButtonCandidates(page: Page, tool: SidebarTool): Locator[
     `[aria-label*=\"${escapeCssAttributeValue(label)}\" i]`,
     `[title*=\"${escapeCssAttributeValue(label)}\" i]`,
     `[data-tooltip*=\"${escapeCssAttributeValue(label)}\" i]`,
-    `[data-original-title*=\"${escapeCssAttributeValue(label)}\" i]`
+    `[data-original-title*=\"${escapeCssAttributeValue(label)}\" i]`,
   ]);
 
   return [
     page.getByRole("tab", { name: labelPattern }),
     page.getByRole("button", { name: labelPattern }),
     page.getByLabel(labelPattern),
-    page.locator(attributeSelectors.join(", "))
+    page.locator(attributeSelectors.join(", ")),
   ];
 }
 

@@ -16,7 +16,7 @@ const elements = {
   selectAll: document.querySelector("#selectAll"),
   clearSelection: document.querySelector("#clearSelection"),
   refreshTests: document.querySelector("#refreshTests"),
-  startAuth: document.querySelector("#startAuth"),
+  refreshConnection: document.querySelector("#refreshConnection"),
   saveAuth: document.querySelector("#saveAuth"),
   cancelAuth: document.querySelector("#cancelAuth"),
   authStatus: document.querySelector("#authStatus"),
@@ -53,7 +53,7 @@ elements.clearSelection.addEventListener("click", () => {
 elements.runSelected.addEventListener("click", () => runTests({ ids: [...state.selected] }));
 elements.runAll.addEventListener("click", () => runTests({ all: true }));
 elements.rerunLast.addEventListener("click", () => rerunLast());
-elements.startAuth.addEventListener("click", startAuthRefresh);
+elements.refreshConnection.addEventListener("click", startAuthRefresh);
 elements.saveAuth.addEventListener("click", saveAuthRefresh);
 elements.cancelAuth.addEventListener("click", cancelAuthRefresh);
 
@@ -252,7 +252,7 @@ function renderRun(run) {
 function renderAuth(auth) {
   state.auth = auth;
   const isOpen = auth.status === "open";
-  elements.startAuth.disabled = isOpen;
+  elements.refreshConnection.disabled = isOpen;
   elements.saveAuth.disabled = !isOpen;
   elements.cancelAuth.disabled = !isOpen;
   elements.authStatus.className = `auth-status ${auth.status || "idle"}`;
@@ -295,7 +295,7 @@ function setAuthBusy(isBusy) {
     return;
   }
 
-  elements.startAuth.disabled = true;
+  elements.refreshConnection.disabled = true;
   elements.saveAuth.disabled = true;
   elements.cancelAuth.disabled = true;
 }

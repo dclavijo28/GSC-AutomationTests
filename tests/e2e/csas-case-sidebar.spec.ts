@@ -7,6 +7,7 @@ import {
   type SidebarTool,
   waitForServiceNowReady
 } from "./helpers/servicenow";
+import { serviceNowLoginOptionsForEnvironment } from "./helpers/servicenow-login";
 
 test.setTimeout(180_000);
 
@@ -27,6 +28,8 @@ const csasCase: CaseFixture = {
   url: "https://sn-gsctest.churchofjesuschrist.org/now/cwf/agent/record/x_tcoj2_church_ct_case_as/9ee8658993accf10dd89b43efaba1075",
   readyPattern: /CSAS0001028/i
 };
+
+const gsctestLogin = serviceNowLoginOptionsForEnvironment("gsctest");
 
 const sidebarTools: SidebarTool[] = [
   {
@@ -94,7 +97,11 @@ async function openWorkspaceCase(page: Page, fixture: CaseFixture): Promise<void
     page,
     page.getByText(fixture.readyPattern).first(),
     `${fixture.name} did not load within 60 seconds.`,
-    60_000
+    60_000,
+    {
+      ...gsctestLogin,
+      resumeUrl: fixture.url,
+    }
   );
 }
 

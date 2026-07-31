@@ -1,30 +1,4 @@
-:root {
-  color-scheme: light;
-  --bg: #eef2f6;
-  --panel: #ffffff;
-  --ink: #192333;
-  --muted: #667085;
-  --line: #d9dee8;
-  --brand: #0b5fff;
-  --brand-strong: #094ccf;
-  --ok: #067647;
-  --fail: #b42318;
-  --warn: #b54708;
-  --topbar: linear-gradient(135deg, #0f172a 0%, #13315c 100%);
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--ink);
-  font: 14px/1.45 "Segoe UI", Arial, Helvetica, sans-serif;
-}
-
-.shell {
+.app-shell {
   width: min(1400px, calc(100% - 48px));
   margin: 24px auto;
 }
@@ -42,35 +16,27 @@ body {
   padding: 22px 24px;
   align-items: center;
   background: var(--topbar);
-  color: #fff;
+  color: #ffffff;
 }
 
-h1,
-h2,
-h3,
-p {
+.eyebrow {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.74);
+}
+
+.topbar h1 {
   margin: 0;
+  font-size: 28px;
+  color: #ffffff;
 }
 
-h1 {
-  font-size: 24px;
-}
-
-h2 {
-  font-size: 18px;
-}
-
-h3 {
-  font-size: 14px;
-  margin: 18px 0 8px;
-}
-
-.topbar-copy p {
+.topbar-subtitle {
+  margin: 8px 0 0;
   color: rgba(255, 255, 255, 0.82);
-}
-
-.muted {
-  color: var(--muted);
 }
 
 .topbar-actions,
@@ -85,27 +51,40 @@ h3 {
 
 .controls {
   margin-top: 16px;
+}
+
+.panel {
   padding: 16px;
   background: var(--panel);
   border: 1px solid var(--line);
 }
 
-.panel-copy {
-  margin: 8px 0 12px;
+.section-header,
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.section-gap {
+  margin-top: 20px;
+}
+
+.section-header h2,
+.panel-header h2,
+.panel h3 {
+  margin: 0;
+}
+
+.section-header p {
+  margin: 8px 0 0;
 }
 
 .search-label {
   display: block;
   font-weight: 700;
-  margin-bottom: 8px;
-}
-
-input[type="search"] {
-  width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  font-size: 15px;
-  padding: 10px 12px;
+  margin: 16px 0 8px;
 }
 
 .selection-row {
@@ -176,24 +155,6 @@ input[type="search"] {
   align-items: start;
 }
 
-.panel {
-  padding: 16px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-}
-
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.test-selection-header {
-  margin-top: 18px;
-}
-
 .button {
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -205,6 +166,7 @@ input[type="search"] {
   align-items: center;
   justify-content: center;
   min-height: 36px;
+  font: inherit;
 }
 
 .button:disabled {
@@ -215,7 +177,7 @@ input[type="search"] {
 .button.primary {
   background: var(--brand);
   border-color: var(--brand);
-  color: #fff;
+  color: #ffffff;
 }
 
 .button.primary:hover {
@@ -224,14 +186,14 @@ input[type="search"] {
 
 .button.secondary,
 .button.ghost {
-  background: #fff;
+  background: #ffffff;
   color: var(--ink);
 }
 
 .topbar .button.secondary {
   border-color: rgba(255, 255, 255, 0.24);
   background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  color: #ffffff;
 }
 
 .topbar .button.secondary:hover {
@@ -244,6 +206,7 @@ input[type="search"] {
   max-height: 620px;
   overflow: auto;
   padding-right: 4px;
+  margin-top: 12px;
 }
 
 .test-card {
@@ -260,6 +223,7 @@ input[type="search"] {
 }
 
 .test-title {
+  display: block;
   font-weight: 700;
   margin-bottom: 4px;
 }
@@ -269,7 +233,7 @@ input[type="search"] {
   display: inline-flex;
   font-size: 11px;
   font-weight: 700;
-  margin-left: 6px;
+  margin-right: 6px;
   padding: 2px 7px;
   vertical-align: middle;
 }
@@ -339,6 +303,14 @@ input[type="search"] {
   padding: 8px 0;
 }
 
+.case-row pre {
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  overflow: auto;
+}
+
 .output {
   background: #111827;
   border-radius: 10px;
@@ -351,14 +323,25 @@ input[type="search"] {
 }
 
 @media (max-width: 920px) {
+  .app-shell {
+    width: min(100% - 24px, 1400px);
+    margin: 12px auto 24px;
+  }
+
   .topbar,
-  .content-grid {
+  .content-grid,
+  .section-header,
+  .panel-header {
     display: block;
   }
 
   .topbar-actions,
   .inline-actions,
-  .content-grid > .panel + .panel {
+  .panel + .panel {
     margin-top: 16px;
+  }
+
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

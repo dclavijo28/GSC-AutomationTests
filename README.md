@@ -107,7 +107,15 @@ Then open:
 http://localhost:4555
 ```
 
-The app lists tests from `tests/e2e`, supports selected or full regression runs, shows the latest console output, and links to the official Playwright HTML report at `/report/index.html`.
+The app is web-based, lists tests from `tests/e2e`, supports selected or full regression runs, shows the latest console output, and links to the official Playwright HTML report at `/report/index.html`.
+
+Story 001 currently covers:
+
+- top menu title `GSC Regression Runner`
+- top menu actions for `Refresh Connection` and `Official Playwright Report`
+- local browser-based regression execution against the shared Playwright suite
+
+The deeper interactive ServiceNow workflow will be expanded later. Today the app already supports refreshing the GSCTEST auth session from the browser flow.
 
 If a run says the saved GSCTEST auth state redirected to MFA, use the app buttons:
 
@@ -127,8 +135,6 @@ npm run test:genesys-inapp
 
 `tests/e2e/csas-case-sidebar.spec.ts` opens the CSLUS case type as the baseline and then validates the CSAS case type against the same sidebar tools and action behavior.
 
-`tests/e2e/genesys-inapp-case.spec.ts` creates a LUS case with Short description `Test Automation STRY0482100`, Assignment group `GSD-Genesys`, Reply to `mlssupport@churchofjesuschrist.org`, saves it, selects the `Debeach` consumer, sets Channel `In-App`, saves again, finds the created case from the open cases list, validates that the Genesys Call ID is populated, and attaches a final screenshot.
-
 Baseline CSLUS case:
 
 ```text
@@ -147,5 +153,4 @@ npm run auth:gsctest
 npm run app
 npm run test:e2e
 npm run test:csas-sidebar
-npm run test:genesys-inapp
 ```

@@ -10,7 +10,6 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:csas-sidebar": "playwright test tests/e2e/csas-case-sidebar.spec.ts",
-    "test:genesys-inapp": "playwright test tests/e2e/genesys-inapp-case.spec.ts",
     "playwright:install": "playwright install"
   },
   "devDependencies": {

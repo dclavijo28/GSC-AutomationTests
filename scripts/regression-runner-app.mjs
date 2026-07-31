@@ -23,6 +23,7 @@ const latestJsonReport = path.join(resultsRoot, "latest-results.json");
 const latestRunState = path.join(resultsRoot, "regression-app-last-run.json");
 const playwrightCli = path.join(repoRoot, "node_modules", "@playwright", "test", "cli.js");
 const port = Number(process.env.PORT || 4555);
+const loginViewport = { width: 1100, height: 620 };
 
 let activeRun = null;
 let lastRun = await readJson(latestRunState).catch(() => null);
@@ -85,6 +86,7 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
+      const body = await readRequestJson(req);
       const hasGsctestWrites = lastRun.selectedTests.some((test) => test.writesGsctest);
       if (hasGsctestWrites && body.confirmGsctestWrites !== true) {
         json(res, { error: "### GSCTEST ### This rerun creates or updates ServiceNow records. Confirm GSCTEST writes before rerunning." }, 400);
@@ -163,8 +165,12 @@ async function startAuthSession() {
   }
 
   await closeAuthSession("replaced");
-  const browser = await chromium.launch({ channel: "chrome", headless: false });
-  const context = await browser.newContext();
+  const browser = await chromium.launch({
+    channel: "chrome",
+    headless: false,
+    args: ["--window-size=1120,700", "--window-position=40,40"]
+  });
+  const context = await browser.newContext({ viewport: loginViewport });
   const page = await context.newPage();
 
   authSession = {
@@ -552,3 +558,6 @@ function titleCase(value) {
 function tail(value, maxLength) {
   return value.length <= maxLength ? value : value.slice(value.length - maxLength);
 }
+
+
+
