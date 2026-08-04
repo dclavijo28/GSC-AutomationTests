@@ -113,12 +113,9 @@ async function openNewCsasCase(page: Page): Promise<void> {
   );
 
   await page.getByRole("button", { name: /^Add$/i }).first().click();
-  const newCsasCase = page
-    .getByRole("menu")
-    .filter({ has: page.getByRole("menuitem", { name: "New CSAS Case", exact: true }) })
-    .last()
-    .getByRole("menuitem", { name: "New CSAS Case", exact: true });
+  const newCsasCase = page.getByRole("menuitem", { name: "New CSAS Case", exact: true }).last();
   await expect(newCsasCase).toBeVisible({ timeout: 30_000 });
+  await newCsasCase.scrollIntoViewIfNeeded();
   await newCsasCase.click();
   await expect(page.getByRole("tab", { name: "New CSAS Case", exact: true })).toBeVisible({ timeout: 30_000 });
 
