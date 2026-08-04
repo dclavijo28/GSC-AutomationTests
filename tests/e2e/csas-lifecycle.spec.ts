@@ -114,7 +114,7 @@ async function openNewCsasCase(page: Page): Promise<void> {
 
   await page.getByRole("button", { name: /^Add$/i }).first().click();
   const newCsasCase = page
-    .getByRole("dialog")
+    .getByRole("menu")
     .filter({ has: page.getByRole("menuitem", { name: "New CSAS Case", exact: true }) })
     .last()
     .getByRole("menuitem", { name: "New CSAS Case", exact: true });
