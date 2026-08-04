@@ -226,20 +226,26 @@ async function editableField(page: Page, labelPatterns: RegExp[], fieldNames: st
 }
 
 async function firstVisibleEditable(page: Page, candidates: Locator[], stepName: string): Promise<Locator> {
-  for (const locator of candidates) {
-    const count = Math.min(await locator.count(), 20);
-    for (let index = 0; index < count; index += 1) {
-      const candidate = locator.nth(index);
-      if (!(await candidate.isVisible().catch(() => false))) continue;
+  const deadline = Date.now() + 30_000;
 
-      const editable = await candidate
-        .evaluate((element) => {
-          const tagName = element.tagName.toLowerCase();
-          return tagName === "input" || tagName === "textarea" || (element as HTMLElement).isContentEditable;
-        })
-        .catch(() => false);
-      if (editable) return candidate;
+  while (Date.now() < deadline) {
+    for (const locator of candidates) {
+      const count = Math.min(await locator.count(), 20);
+      for (let index = 0; index < count; index += 1) {
+        const candidate = locator.nth(index);
+        if (!(await candidate.isVisible().catch(() => false))) continue;
+
+        const editable = await candidate
+          .evaluate((element) => {
+            const tagName = element.tagName.toLowerCase();
+            return tagName === "input" || tagName === "textarea" || (element as HTMLElement).isContentEditable;
+          })
+          .catch(() => false);
+        if (editable) return candidate;
+      }
     }
+
+    await page.waitForTimeout(250);
   }
 
   await page.screenshot({ path: `test-results/${stepName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-field-not-found.png`, fullPage: true });
