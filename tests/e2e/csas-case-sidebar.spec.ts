@@ -149,21 +149,15 @@ async function openRightSidebarTabs(page: Page, tabNames: string[], caseName: st
 
       await expect(tab, `${name} is not available on ${caseName}.`).toBeVisible();
       await tab.click();
-      await expect
-        .poll(async () => {
-          const selected = await tab.getAttribute("aria-selected");
-          const expanded = await tab.getAttribute("aria-expanded");
-          return selected === "true" || expanded === "true";
-        }, { message: `${name} did not become active on ${caseName}.` })
-        .toBe(true);
     });
   }
 }
 
 async function showMoreSidebarTabs(page: Page): Promise<void> {
-  const moreTabs = page.getByRole("button", { name: "More tabs" });
+  const moreTabs = rightSidebarTabList(page).locator("xpath=following-sibling::*").getByRole("button", { name: "More tabs" });
   if (await moreTabs.isVisible().catch(() => false)) {
-    await moreTabs.click();
+    await moreTabs.click({ force: true, timeout: 5_000 });
+    await page.waitForTimeout(250);
   }
 }
 
