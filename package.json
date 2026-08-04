@@ -10,6 +10,7 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:csas-sidebar": "playwright test tests/e2e/csas-case-sidebar.spec.ts",
+    "test:csas-lifecycle": "playwright test tests/e2e/csas-lifecycle.spec.ts",
     "playwright:install": "playwright install"
   },
   "devDependencies": {

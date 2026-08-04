@@ -139,6 +139,15 @@ If a run says the saved GSCTEST auth state redirected to MFA, use the app button
 
 Tests that create or update ServiceNow records must require an explicit confirmation token before they are added to the regression suite. The current CSAS sidebar checks are read-only.
 
+`STRY0431121` creates a new GSCTEST CSAS case, assigns `GSD-ITS-EMP-CORE`, and selects a consumer. It first verifies that the signed-in user has the `x_tcoj2_church_ct.case_as_user` role. Because it writes a record, run it only when you intend to create a test case:
+
+```powershell
+$env:CONFIRM_GSCTEST_WRITES = "GSCTEST"
+npm run test:csas-lifecycle
+```
+
+The GSC Regression Runner detects this write test and asks for the same confirmation before it runs.
+
 ## Current Coverage
 
 `tests/e2e/csas-case-sidebar.spec.ts` selects active CSLUS and CSAS cases and validates that they expose the same sidebar tools and action behavior. Set `SN_GSCTEST_CSLUS_CASE_URL` and `SN_GSCTEST_CSAS_CASE_URL` only to run against specific records.
@@ -149,4 +158,5 @@ npm run auth:gsctest
 npm run app
 npm run test:e2e
 npm run test:csas-sidebar
+npm run test:csas-lifecycle
 ```
