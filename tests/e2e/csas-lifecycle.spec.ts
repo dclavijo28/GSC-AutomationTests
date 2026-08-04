@@ -123,22 +123,21 @@ async function openNewCsasCase(page: Page): Promise<void> {
     "Open New CSAS case"
   );
 
-  await expect(firstVisibleField(page, [/Short description/i], "Short description")).toBeVisible({ timeout: 30_000 });
+  await expect(await editableField(page, [/Short description/i], ["short_description"], "Short description")).toBeVisible({
+    timeout: 30_000,
+  });
 }
 
 async function fillShortDescription(page: Page, value: string): Promise<void> {
-  const field = firstVisibleField(page, [/Short description/i], "Short description");
+  const field = await editableField(page, [/Short description/i], ["short_description"], "Short description");
   await field.fill(value);
   await expect(field).toHaveValue(value);
 }
 
 async function setAssignmentGroup(page: Page, value: string): Promise<void> {
-  const field = firstVisibleField(page, [/Assignment group/i], "Assignment group");
+  const field = await editableField(page, [/Assignment group/i], ["assignment_group"], "Assignment group");
   await field.click();
-  await field.fill(value).catch(async () => {
-    await page.keyboard.press("Control+A");
-    await page.keyboard.type(value);
-  });
+  await field.fill(value);
 
   await clickFirstVisible(
     page,
@@ -158,7 +157,12 @@ async function selectFirstAvailableConsumer(page: Page): Promise<string> {
     "Open Record Information"
   );
 
-  const consumerField = firstVisibleField(page, [/Lookup by Church Account, Phone, Email/i], "Consumer lookup");
+  const consumerField = await editableField(
+    page,
+    [/Lookup by Church Account, Phone, Email/i],
+    ["consumer", "caller", "requested_for"],
+    "Consumer lookup"
+  );
   await consumerField.fill("a");
 
   const consumerOption = await firstVisible(
@@ -198,13 +202,48 @@ async function waitForCreatedCsasCase(page: Page, shortDescription: string): Pro
   return caseNumber;
 }
 
-function firstVisibleField(page: Page, labelPatterns: RegExp[], stepName: string): Locator {
+async function editableField(page: Page, labelPatterns: RegExp[], fieldNames: string[], stepName: string): Promise<Locator> {
   const labelPattern = new RegExp(labelPatterns.map((pattern) => pattern.source).join("|"), "i");
-  return page
-    .getByRole("textbox", { name: labelPattern })
-    .or(page.getByRole("combobox", { name: labelPattern }))
-    .or(page.getByLabel(labelPattern))
-    .first();
+  const fieldSelectors = fieldNames.flatMap((name) => [
+    `input[name*="${name}" i]`,
+    `input[id*="${name}" i]`,
+    `textarea[name*="${name}" i]`,
+    `textarea[id*="${name}" i]`,
+    `[data-field-name*="${name}" i] input`,
+    `[data-field*="${name}" i] input`,
+    `[data-name*="${name}" i] input`,
+  ]);
+
+  return firstVisibleEditable(
+    page,
+    [
+      page.getByRole("textbox", { name: labelPattern }),
+      page.getByLabel(labelPattern),
+      page.locator(fieldSelectors.join(", ")),
+    ],
+    stepName
+  );
+}
+
+async function firstVisibleEditable(page: Page, candidates: Locator[], stepName: string): Promise<Locator> {
+  for (const locator of candidates) {
+    const count = Math.min(await locator.count(), 20);
+    for (let index = 0; index < count; index += 1) {
+      const candidate = locator.nth(index);
+      if (!(await candidate.isVisible().catch(() => false))) continue;
+
+      const editable = await candidate
+        .evaluate((element) => {
+          const tagName = element.tagName.toLowerCase();
+          return tagName === "input" || tagName === "textarea" || (element as HTMLElement).isContentEditable;
+        })
+        .catch(() => false);
+      if (editable) return candidate;
+    }
+  }
+
+  await page.screenshot({ path: `test-results/${stepName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-field-not-found.png`, fullPage: true });
+  throw new Error(`Unable to find an editable field for step: ${stepName}`);
 }
 
 async function firstVisible(page: Page, candidates: Locator[], stepName: string): Promise<Locator> {
