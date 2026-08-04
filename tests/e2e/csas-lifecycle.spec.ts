@@ -113,15 +113,14 @@ async function openNewCsasCase(page: Page): Promise<void> {
   );
 
   await page.getByRole("button", { name: /^Add$/i }).first().click();
-  await clickFirstVisible(
-    page,
-    [
-      page.getByRole("menuitem", { name: /New CSAS case/i }),
-      page.getByRole("button", { name: /New CSAS case/i }),
-      page.getByText(exactTextPattern("New CSAS case")),
-    ],
-    "Open New CSAS case"
-  );
+  const newCsasCase = page
+    .getByRole("dialog")
+    .filter({ has: page.getByRole("menuitem", { name: "New CSAS Case", exact: true }) })
+    .last()
+    .getByRole("menuitem", { name: "New CSAS Case", exact: true });
+  await expect(newCsasCase).toBeVisible({ timeout: 30_000 });
+  await newCsasCase.click();
+  await expect(page.getByRole("tab", { name: "New CSAS Case", exact: true })).toBeVisible({ timeout: 30_000 });
 
   await expect(await editableField(page, [/Short description/i], ["short_description"], "Short description")).toBeVisible({
     timeout: 30_000,
