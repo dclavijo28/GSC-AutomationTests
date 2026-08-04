@@ -3,17 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import type { Page } from "@playwright/test";
-
-const environments = {
-  gsctest: {
-    loginUrl: "https://sn-gsctest.churchofjesuschrist.org/login.do",
-    storageStatePath: process.env.SN_GSCTEST_STORAGE_STATE ?? "playwright/.auth/gsctest-state.json",
-  },
-  gscdev: {
-    loginUrl: "https://sn-gscdev.churchofjesuschrist.org/login.do",
-    storageStatePath: process.env.SN_GSCDEV_STORAGE_STATE ?? "playwright/.auth/gscdev-state.json",
-  },
-} as const;
+import { serviceNowEnvironmentConfig, type ServiceNowEnvironment } from "./servicenow-config";
 
 const defaultLoginIndicators = [
   /login/i,
@@ -31,8 +21,6 @@ const loginViewport = {
   width: 1100,
   height: 620,
 };
-
-export type ServiceNowEnvironment = keyof typeof environments;
 
 export type ServiceNowLoginOptions = {
   forceInteractiveLogin?: boolean;
@@ -52,7 +40,7 @@ export function serviceNowLoginOptionsForEnvironment(
   environment: ServiceNowEnvironment,
   overrides: Partial<ServiceNowLoginOptions> = {}
 ): ServiceNowLoginOptions {
-  const config = environments[environment];
+  const config = serviceNowEnvironmentConfig(environment);
   return {
     loginUrl: config.loginUrl,
     storageStatePath: config.storageStatePath,
@@ -65,7 +53,7 @@ export async function ensureServiceNowInteractiveLogin(page: Page, options: Serv
   const interactiveTimeoutMs =
     options.interactiveTimeoutMs ?? numberFromEnv("SN_INTERACTIVE_LOGIN_TIMEOUT_MS", 300_000);
   const storageStatePath =
-    options.storageStatePath ?? process.env.SN_GSCTEST_STORAGE_STATE ?? "playwright/.auth/gsctest-state.json";
+    options.storageStatePath ?? serviceNowEnvironmentConfig("gsctest").storageStatePath;
   const resolvedStorageStatePath = path.resolve(process.cwd(), storageStatePath);
   const loginUrl = options.loginUrl ?? page.url();
   const resumeUrl = options.resumeUrl ?? page.url();
@@ -165,12 +153,13 @@ async function applyLoginViewport(page: Page): Promise<void> {
 async function fitLoginPage(page: Page): Promise<void> {
   const snapshot = await getServiceNowLoginSnapshot(page).catch(() => null);
   if (!snapshot || !isServiceNowLoginSnapshot(snapshot)) return;
+  const zoom = /id\.churchofjesuschrist\.org/i.test(snapshot.url) ? "100%" : "50%";
 
-  await page.evaluate(() => {
-    document.documentElement.style.setProperty("zoom", "50%");
-    document.body.style.setProperty("zoom", "50%");
+  await page.evaluate((pageZoom) => {
+    document.documentElement.style.setProperty("zoom", pageZoom);
+    document.body.style.setProperty("zoom", pageZoom);
     window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
-  }).catch(() => undefined);
+  }, zoom).catch(() => undefined);
 
   await page.keyboard.press("Control+0").catch(() => undefined);
   await page.mouse.wheel(0, 500).catch(() => undefined);

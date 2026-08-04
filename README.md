@@ -83,6 +83,19 @@ npm run auth:gsctest
 
 You can also set `SN_GSCTEST_STORAGE_STATE` to another local auth-state file before running tests.
 
+## Test Configuration
+
+ServiceNow record and workspace URLs are deliberately kept out of the test source. The CSAS sidebar test automatically selects the newest active CSLUS and CSAS records from GSCTEST using your signed-in session. Copy `.env.example` to `.env` for reference, then set values in your PowerShell or WebStorm run configuration only when you need to target specific records. Do not commit `.env`.
+
+To override automatic selection for the CSAS sidebar test, configure a valid baseline and target record:
+
+```powershell
+$env:SN_GSCTEST_CSLUS_CASE_URL = "https://sn-gsctest.churchofjesuschrist.org/now/cwf/agent/record/<cslus-table>/<baseline-sys-id>"
+$env:SN_GSCTEST_CSAS_CASE_URL = "https://sn-gsctest.churchofjesuschrist.org/now/cwf/agent/record/<csas-table>/<target-sys-id>"
+```
+
+Optional instance overrides are available through `SN_GSCTEST_BASE_URL`, `SN_GSCDEV_BASE_URL`, `SN_GSCDEV_IN_APP_CASE_URL`, and `SN_GSCDEV_OPEN_CASES_LIST_URL`.
+
 ## Run From WebStorm
 
 1. Run `npm install`.
@@ -124,28 +137,11 @@ If a run says the saved GSCTEST auth state redirected to MFA, use the app button
 3. Return to the app and click `Save Auth`.
 4. Rerun the test.
 
-Tests marked `Writes GSCTEST` create or update records in ServiceNow GSCTEST. The app asks for explicit confirmation before running them. From PowerShell, set the confirmation token before running a write-capable test directly:
-
-```powershell
-$env:CONFIRM_GSCTEST_WRITES = "GSCTEST"
-npm run test:genesys-inapp
-```
+Tests that create or update ServiceNow records must require an explicit confirmation token before they are added to the regression suite. The current CSAS sidebar checks are read-only.
 
 ## Current Coverage
 
-`tests/e2e/csas-case-sidebar.spec.ts` opens the CSLUS case type as the baseline and then validates the CSAS case type against the same sidebar tools and action behavior.
-
-Baseline CSLUS case:
-
-```text
-https://sn-gsctest.churchofjesuschrist.org/now/cwf/agent/record/x_tcoj2_church_ct_case_lus/1ff3fdeb47ec8f10514da04f116d432f
-```
-
-Target CSAS case:
-
-```text
-https://sn-gsctest.churchofjesuschrist.org/now/cwf/agent/record/x_tcoj2_church_ct_case_as/9ee8658993accf10dd89b43efaba1075
-```
+`tests/e2e/csas-case-sidebar.spec.ts` selects active CSLUS and CSAS cases and validates that they expose the same sidebar tools and action behavior. Set `SN_GSCTEST_CSLUS_CASE_URL` and `SN_GSCTEST_CSAS_CASE_URL` only to run against specific records.
 ## Commands
 
 ```powershell

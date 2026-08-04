@@ -1,11 +1,11 @@
 import { clickFirstVisible, waitForServiceNowReady } from "../helpers/servicenow";
+import { configuredUrl } from "../helpers/servicenow-config";
+import { serviceNowLoginOptionsForEnvironment } from "../helpers/servicenow-login";
 import { ServiceNowWorkspacePage } from "./ServiceNowWorkspacePage";
-
-const openCasesListUrl =
-  "https://sn-gscdev.churchofjesuschrist.org/now/cwf/agent/list/params/list-id/46f284161b449110f61ffe6edd4bcb9b/__state__/b64~eyIwYzY5ZGFlOGNjODQyMjEwZjg3Nzk5NTgzZTE2NjhiMiI6eyJsaXN0X2NvbnRyb2xsZXIiOnsiXyI6eyJncm91cEJ5IjoiIiwicXVlcnkiOiJhY3RpdmU9dHJ1ZV5zdGF0ZU5PVCBJTjYsMjMsMyw3XkVRIiwiY3VycmVudFBhZ2UiOjB9fX19";
 
 export class OpenCasesListPage extends ServiceNowWorkspacePage {
   async openNewestCaseFromSearch(searchText: string): Promise<string> {
+    const gscdevLogin = serviceNowLoginOptionsForEnvironment("gscdev");
     await this.openOpenCasesList();
 
     const deadline = Date.now() + 120_000;
@@ -27,9 +27,8 @@ export class OpenCasesListPage extends ServiceNowWorkspacePage {
           `The created case for ${searchText} did not open from the list.`,
           60_000,
           {
-            loginUrl: "https://sn-gscdev.churchofjesuschrist.org/login.do",
+            ...gscdevLogin,
             resumeUrl: this.page.url(),
-            storageStatePath: process.env.SN_GSCDEV_STORAGE_STATE ?? "playwright/.auth/gscdev-state.json"
           }
         );
 
@@ -74,6 +73,8 @@ export class OpenCasesListPage extends ServiceNowWorkspacePage {
   }
 
   private async openOpenCasesList(): Promise<void> {
+    const openCasesListUrl = configuredUrl("SN_GSCDEV_OPEN_CASES_LIST_URL");
+    const gscdevLogin = serviceNowLoginOptionsForEnvironment("gscdev");
     await this.prepareWorkspaceViewport();
     await this.page.goto(openCasesListUrl, { waitUntil: "domcontentloaded" });
     await this.applyWorkspaceZoom();
@@ -83,9 +84,8 @@ export class OpenCasesListPage extends ServiceNowWorkspacePage {
       "The Open cases workspace list did not load within 60 seconds.",
       60_000,
       {
-        loginUrl: "https://sn-gscdev.churchofjesuschrist.org/login.do",
+        ...gscdevLogin,
         resumeUrl: openCasesListUrl,
-        storageStatePath: process.env.SN_GSCDEV_STORAGE_STATE ?? "playwright/.auth/gscdev-state.json"
       }
     );
 
@@ -119,15 +119,16 @@ export class OpenCasesListPage extends ServiceNowWorkspacePage {
   }
 
   private async waitForGridReady(message: string): Promise<void> {
+    const openCasesListUrl = configuredUrl("SN_GSCDEV_OPEN_CASES_LIST_URL");
+    const gscdevLogin = serviceNowLoginOptionsForEnvironment("gscdev");
     await waitForServiceNowReady(
       this.page,
       this.page.getByRole("grid").first(),
       message,
       60_000,
       {
-        loginUrl: "https://sn-gscdev.churchofjesuschrist.org/login.do",
+        ...gscdevLogin,
         resumeUrl: openCasesListUrl,
-        storageStatePath: process.env.SN_GSCDEV_STORAGE_STATE ?? "playwright/.auth/gscdev-state.json"
       }
     );
   }

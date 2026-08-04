@@ -19,6 +19,32 @@ export function exactTextPattern(value: string): RegExp {
   return new RegExp(`^\\s*${escapeRegExp(value)}\\s*$`, "i");
 }
 
+export async function setServiceNowWorkspaceWindowSize(page: Page, screenPercent = 0.8): Promise<void> {
+  const session = await page.context().newCDPSession(page).catch(() => null);
+  if (!session) return;
+
+  const screen = await page
+    .evaluate(() => ({ width: window.screen.availWidth, height: window.screen.availHeight }))
+    .catch(() => null);
+  const chromeWindow = await session.send("Browser.getWindowForTarget").catch(() => null);
+  if (!screen || !chromeWindow?.windowId) return;
+
+  const width = Math.round(screen.width * screenPercent);
+  const height = Math.round(screen.height * screenPercent);
+  await session
+    .send("Browser.setWindowBounds", {
+        windowId: chromeWindow.windowId,
+      bounds: {
+        windowState: "normal",
+        width,
+        height,
+        left: Math.round((screen.width - width) / 2),
+        top: Math.round((screen.height - height) / 2),
+      },
+    })
+    .catch(() => undefined);
+}
+
 export async function waitForServiceNowReady(
   page: Page,
   readyLocator: Locator,
@@ -28,10 +54,15 @@ export async function waitForServiceNowReady(
 ): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   const authenticatorHeading = page.getByRole("heading", { name: /Authenticator/i });
+  const recordNotFoundHeading = page.getByRole("heading", { name: /Record not found/i });
 
   while (Date.now() < deadline) {
     if (await readyLocator.isVisible().catch(() => false)) {
       return;
+    }
+
+    if (await recordNotFoundHeading.isVisible().catch(() => false)) {
+      throw new Error(`ServiceNow opened the page, but the target record was not found: ${page.url()}`);
     }
 
     if (await authenticatorHeading.isVisible().catch(() => false)) {

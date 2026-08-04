@@ -1,8 +1,9 @@
 ﻿import { expect, test, type BrowserContext, type Locator, type Page } from "@playwright/test";
 import { waitForServiceNowReady } from "../helpers/servicenow";
+import { configuredUrl } from "../helpers/servicenow-config";
+import { serviceNowLoginOptionsForEnvironment } from "../helpers/servicenow-login";
 import { ServiceNowWorkspacePage } from "./ServiceNowWorkspacePage";
 
-const inAppCaseUrl = "https://inappserver-test.churchofjesuschrist.org/testCaseUi";
 const pureCloudLoginUrlPattern = /^https:\/\/login\.usw2\.pure\.cloud\//i;
 
 export class GenesysLusCasePage extends ServiceNowWorkspacePage {
@@ -16,6 +17,7 @@ export class GenesysLusCasePage extends ServiceNowWorkspacePage {
 
   async createInAppCase(input: { shortDescription: string; longDescription: string; channel: string }): Promise<string> {
     await this.openInAppCaseCreator();
+    const initialUrl = this.page.url();
 
     const shortDescriptionField = this.page.locator("#caseTitle");
     const longDescriptionField = this.page.locator("#caseDescription");
@@ -34,7 +36,7 @@ export class GenesysLusCasePage extends ServiceNowWorkspacePage {
         const currentUrl = this.page.url();
         return (
           /created|success|submitted|case number|CSLUS\d+/i.test(bodyText) ||
-          currentUrl !== inAppCaseUrl ||
+          currentUrl !== initialUrl ||
           !(await createCaseButton.isVisible().catch(() => true))
         );
       }, {
@@ -66,6 +68,7 @@ export class GenesysLusCasePage extends ServiceNowWorkspacePage {
   }
 
   async expectCallIdGenerated(readyText: string): Promise<void> {
+    const gscdevLogin = serviceNowLoginOptionsForEnvironment("gscdev");
     const labels = ["Call ID", "Call id", "Call Id", "Call ID parameter", "Call id parameter"];
     const deadline = Date.now() + 120_000;
 
@@ -83,9 +86,8 @@ export class GenesysLusCasePage extends ServiceNowWorkspacePage {
         `Created case ${readyText} did not reload while waiting for Genesys call id.`,
         60_000,
         {
-          loginUrl: "https://sn-gscdev.churchofjesuschrist.org/login.do",
+          ...gscdevLogin,
           resumeUrl: this.page.url(),
-          storageStatePath: process.env.SN_GSCDEV_STORAGE_STATE ?? "playwright/.auth/gscdev-state.json"
         }
       );
       await this.page.waitForTimeout(5_000);
@@ -108,6 +110,8 @@ export class GenesysLusCasePage extends ServiceNowWorkspacePage {
   }
 
   private async openInAppCaseCreator(): Promise<void> {
+    const inAppCaseUrl = configuredUrl("SN_GSCDEV_IN_APP_CASE_URL");
+    const gscdevLogin = serviceNowLoginOptionsForEnvironment("gscdev");
     await this.closePureCloudPopupPages(this.page.context(), this.page);
     await this.prepareWorkspaceViewport();
     await this.page.goto(inAppCaseUrl, { waitUntil: "domcontentloaded" });
@@ -117,9 +121,8 @@ export class GenesysLusCasePage extends ServiceNowWorkspacePage {
       "The in-app test case UI did not load within 60 seconds.",
       60_000,
       {
-        loginUrl: inAppCaseUrl,
+        ...gscdevLogin,
         resumeUrl: inAppCaseUrl,
-        storageStatePath: process.env.SN_GSCDEV_STORAGE_STATE ?? "playwright/.auth/gscdev-state.json"
       }
     );
   }

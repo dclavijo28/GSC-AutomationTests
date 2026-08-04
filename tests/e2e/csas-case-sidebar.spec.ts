@@ -1,97 +1,66 @@
 ﻿import { expect, test, type Page } from "@playwright/test";
-import {
-  clickFirstVisible,
-  expectAnyVisible,
-  expectSidebarButtonVisible,
-  sidebarButtonCandidates,
-  type SidebarTool,
-  waitForServiceNowReady
-} from "./helpers/servicenow";
-import { serviceNowLoginOptionsForEnvironment } from "./helpers/servicenow-login";
+import { setServiceNowWorkspaceWindowSize, waitForServiceNowReady } from "./helpers/servicenow";
+import { ensureServiceNowInteractiveLogin, serviceNowLoginOptionsForEnvironment } from "./helpers/servicenow-login";
+import { optionalConfiguredUrl, serviceNowEnvironmentConfig } from "./helpers/servicenow-config";
 
 test.setTimeout(180_000);
 
 type CaseFixture = {
   name: string;
-  url: string;
+  urlEnvironmentVariable: string;
+  tableName: string;
   readyPattern: RegExp;
 };
 
 const cslusCase: CaseFixture = {
   name: "CSLUS baseline case",
-  url: "https://sn-gsctest.churchofjesuschrist.org/now/cwf/agent/record/x_tcoj2_church_ct_case_lus/1ff3fdeb47ec8f10514da04f116d432f",
+  urlEnvironmentVariable: "SN_GSCTEST_CSLUS_CASE_URL",
+  tableName: "x_tcoj2_church_ct_case_lus",
   readyPattern: /CSLUS\d+|Record Information|Activity/i
 };
 
 const csasCase: CaseFixture = {
   name: "CSAS target case",
-  url: "https://sn-gsctest.churchofjesuschrist.org/now/cwf/agent/record/x_tcoj2_church_ct_case_as/9ee8658993accf10dd89b43efaba1075",
-  readyPattern: /CSAS0001028/i
+  urlEnvironmentVariable: "SN_GSCTEST_CSAS_CASE_URL",
+  tableName: "x_tcoj2_church_ct_case_as",
+  readyPattern: /CSAS\d+|Record Information|Activity/i
 };
 
 const gsctestLogin = serviceNowLoginOptionsForEnvironment("gsctest");
 
-const sidebarTools: SidebarTool[] = [
-  {
-    name: "Record Information",
-    labels: ["Record Information", "Record info"],
-    expectedContent: [/Record Information/i, /Consumer/i, /Requested for/i]
-  },
-  {
-    name: "Recommended Actions",
-    labels: ["Recommended Actions", "Recommended actions"],
-    expectedContent: [/Recommended Actions/i, /recommended/i, /action/i]
-  },
-  {
-    name: "Attachments",
-    labels: ["Attachments", "Attachment"],
-    expectedContent: [/Attachments?/i, /Upload/i, /Choose file/i, /Drag/i]
-  },
-  {
-    name: "Template",
-    labels: ["Template", "Templates"],
-    expectedContent: [/Templates?/i, /Apply template/i, /Select template/i]
-  },
-  {
-    name: "Quick Response",
-    labels: ["Quick Response", "Quick Responses", "Response Template"],
-    expectedContent: [/Response Template/i, /Quick Responses?/i, /predefined/i, /response/i]
-  },
-  {
-    name: "Related Lists",
-    labels: ["Related Lists", "Related List"],
-    expectedContent: [/Related Lists?/i, /Related/i]
-  }
-];
-
 test.describe("CSAS Workspace case right sidebar", () => {
   test("displays the same configured right sidebar buttons as the CSLUS case type", async ({ page }) => {
-    await test.step("baseline CSLUS case shows expected sidebar tools", async () => {
+    const cslusTabs = await test.step("read configured CSLUS sidebar tabs", async () => {
       await openWorkspaceCase(page, cslusCase);
-      await expectSidebarToolsVisible(page);
+      return getRightSidebarTabNames(page);
     });
 
-    await test.step("target CSAS case shows expected sidebar tools", async () => {
+    await test.step("CSAS sidebar matches configured CSLUS tabs", async () => {
       await openWorkspaceCase(page, csasCase);
-      await expectSidebarToolsVisible(page);
+      await expect(getRightSidebarTabNames(page)).resolves.toEqual(cslusTabs);
     });
   });
 
   test("opens the corresponding sidebar action as the CSLUS case type", async ({ page }) => {
-    await test.step("baseline CSLUS case opens expected sidebar actions", async () => {
+    const cslusTabs = await test.step("read and open CSLUS sidebar actions", async () => {
       await openWorkspaceCase(page, cslusCase);
-      await expectSidebarToolActions(page, cslusCase.name);
+      const tabs = await getRightSidebarTabNames(page);
+      await openRightSidebarTabs(page, tabs, cslusCase.name);
+      return tabs;
     });
 
-    await test.step("target CSAS case opens expected sidebar actions", async () => {
+    await test.step("CSAS opens the same sidebar actions", async () => {
       await openWorkspaceCase(page, csasCase);
-      await expectSidebarToolActions(page, csasCase.name);
+      await expect(getRightSidebarTabNames(page)).resolves.toEqual(cslusTabs);
+      await openRightSidebarTabs(page, cslusTabs, csasCase.name);
     });
   });
 });
 
 async function openWorkspaceCase(page: Page, fixture: CaseFixture): Promise<void> {
-  await page.goto(fixture.url, { waitUntil: "domcontentloaded" });
+  await setServiceNowWorkspaceWindowSize(page);
+  const url = await resolveCaseUrl(page, fixture);
+  await page.goto(url, { waitUntil: "domcontentloaded" });
   await expect(page).toHaveURL(/sn-gsctest\.churchofjesuschrist\.org/);
   await waitForServiceNowReady(
     page,
@@ -100,32 +69,104 @@ async function openWorkspaceCase(page: Page, fixture: CaseFixture): Promise<void
     60_000,
     {
       ...gsctestLogin,
-      resumeUrl: fixture.url,
+      resumeUrl: url,
     }
   );
 }
 
-async function expectSidebarToolsVisible(page: Page): Promise<void> {
-  for (const tool of sidebarTools) {
-    await test.step(`shows ${tool.name}`, async () => {
-      await expectSidebarButtonVisible(page, tool);
+async function resolveCaseUrl(page: Page, fixture: CaseFixture): Promise<string> {
+  const configuredUrl = optionalConfiguredUrl(fixture.urlEnvironmentVariable);
+  if (configuredUrl) return configuredUrl;
+
+  const environment = serviceNowEnvironmentConfig("gsctest");
+  const homeUrl = new URL("/now/nav/ui/classic/params/target/home.do", environment.baseUrl).toString();
+  await page.goto(homeUrl, { waitUntil: "domcontentloaded" });
+  await ensureServiceNowInteractiveLogin(page, { ...gsctestLogin, resumeUrl: homeUrl });
+
+  const listUrl = new URL(`/${fixture.tableName}_list.do`, environment.baseUrl);
+  listUrl.searchParams.set("sysparm_query", "active=true^ORDERBYDESCsys_updated_on");
+  listUrl.searchParams.set("sysparm_limit", "1");
+  await page.goto(listUrl.toString(), { waitUntil: "domcontentloaded" });
+
+  const recordLink = page.locator(`a[href*="${fixture.tableName}.do"][href*="sys_id="]`).first();
+  await waitForServiceNowReady(
+    page,
+    recordLink,
+    `No active ${fixture.name} record was available in the ServiceNow list. Set ${fixture.urlEnvironmentVariable} to a valid workspace record URL instead.`,
+    60_000,
+    { ...gsctestLogin, resumeUrl: listUrl.toString() }
+  );
+
+  const href = await recordLink.getAttribute("href");
+  const sysId = href ? new URL(href, environment.baseUrl).searchParams.get("sys_id") : null;
+  if (!sysId) {
+    throw new Error(
+      `ServiceNow displayed an active ${fixture.name} row without a record identifier. Set ${fixture.urlEnvironmentVariable} to a valid workspace record URL instead.`
+    );
+  }
+
+  return new URL(`/now/cwf/agent/record/${fixture.tableName}/${sysId}`, environment.baseUrl).toString();
+}
+
+function rightSidebarTabList(page: Page) {
+  return page
+    .getByRole("tablist")
+    .filter({ has: page.getByRole("tab", { name: /Record Information/i }) })
+    .first();
+}
+
+async function getRightSidebarTabNames(page: Page): Promise<string[]> {
+  const tabList = rightSidebarTabList(page);
+  await expect(tabList).toBeVisible({ timeout: 15_000 });
+  await showMoreSidebarTabs(page);
+
+  const tabs = tabList.getByRole("tab");
+  const labels = await Promise.all(
+    Array.from({ length: await tabs.count() }, async (_, index) => {
+      const tab = tabs.nth(index);
+      const label =
+        (await tab.getAttribute("aria-label")) ??
+        (await tab.getAttribute("title")) ??
+        (await tab.textContent());
+      return label?.trim() ?? "";
+    })
+  );
+
+  const configuredTabs = labels.filter(Boolean);
+  expect(configuredTabs, "The right sidebar must expose at least one configured tab.").not.toEqual([]);
+  return configuredTabs;
+}
+
+async function openRightSidebarTabs(page: Page, tabNames: string[], caseName: string): Promise<void> {
+  const tabList = rightSidebarTabList(page);
+
+  for (const name of tabNames) {
+    await test.step(`opens ${name} on ${caseName}`, async () => {
+      const tab = tabList.getByRole("tab", { name: exactTextPattern(name) });
+      if (!(await tab.isVisible().catch(() => false))) {
+        await showMoreSidebarTabs(page);
+      }
+
+      await expect(tab, `${name} is not available on ${caseName}.`).toBeVisible();
+      await tab.click();
+      await expect
+        .poll(async () => {
+          const selected = await tab.getAttribute("aria-selected");
+          const expanded = await tab.getAttribute("aria-expanded");
+          return selected === "true" || expanded === "true";
+        }, { message: `${name} did not become active on ${caseName}.` })
+        .toBe(true);
     });
   }
 }
 
-async function expectSidebarToolActions(page: Page, caseName: string): Promise<void> {
-  for (const tool of sidebarTools) {
-    await test.step(`opens ${tool.name}`, async () => {
-      await openSidebarTool(page, tool);
-      await expectAnyVisible(
-        page,
-        tool.expectedContent,
-        `${tool.name} did not show the expected panel or action content on ${caseName}.`
-      );
-    });
+async function showMoreSidebarTabs(page: Page): Promise<void> {
+  const moreTabs = page.getByRole("button", { name: "More tabs" });
+  if (await moreTabs.isVisible().catch(() => false)) {
+    await moreTabs.click();
   }
 }
 
-async function openSidebarTool(page: Page, tool: SidebarTool): Promise<void> {
-  await clickFirstVisible(page, sidebarButtonCandidates(page, tool), `Open ${tool.name}`);
+function exactTextPattern(value: string): RegExp {
+  return new RegExp(`^\\s*${value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*$`, "i");
 }

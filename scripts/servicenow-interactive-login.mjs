@@ -124,12 +124,13 @@ async function applyLoginViewport(page) {
 async function fitLoginPage(page) {
   const snapshot = await getLoginSnapshot(page).catch(() => null);
   if (!snapshot || !isLoginRequired(snapshot)) return;
+  const zoom = /id\.churchofjesuschrist\.org/i.test(snapshot.url) ? "100%" : "50%";
 
-  await page.evaluate(() => {
-    document.documentElement.style.setProperty("zoom", "50%");
-    document.body.style.setProperty("zoom", "50%");
+  await page.evaluate((pageZoom) => {
+    document.documentElement.style.setProperty("zoom", pageZoom);
+    document.body.style.setProperty("zoom", pageZoom);
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-  }).catch(() => undefined);
+  }, zoom).catch(() => undefined);
 
   await page.keyboard.press("Control+0").catch(() => undefined);
   await page.mouse.wheel(0, 500).catch(() => undefined);
