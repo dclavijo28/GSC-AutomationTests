@@ -135,15 +135,13 @@ async function setAssignmentGroup(page: Page, value: string): Promise<void> {
   await field.click();
   await field.fill(value);
 
-  await clickFirstVisible(
-    page,
-    [
-      page.getByRole("option", { name: exactTextPattern(value) }),
-      page.locator('[role="option"]').filter({ hasText: exactTextPattern(value) }),
-      page.getByText(exactTextPattern(value)),
-    ],
-    `Select assignment group ${value}`
-  );
+  const option = page
+    .getByRole("listbox", { name: /Assignment group/i })
+    .last()
+    .getByRole("option", { name: value, exact: true });
+  await expect(option).toBeVisible({ timeout: 30_000 });
+  await option.click();
+  await expect(field).toHaveValue(value);
 }
 
 async function selectFirstAvailableConsumer(page: Page): Promise<string> {
