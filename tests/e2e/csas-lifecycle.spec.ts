@@ -131,16 +131,15 @@ async function fillShortDescription(page: Page, value: string): Promise<void> {
 }
 
 async function setAssignmentGroup(page: Page, value: string): Promise<void> {
-  const field = await editableField(page, [/Assignment group/i], ["assignment_group"], "Assignment group");
+  const field = page.locator('input[name="assignment_group"]').last();
+  await expect(field).toBeVisible({ timeout: 30_000 });
   await field.click();
+  await field.press("Control+A");
   await field.fill(value);
 
-  const option = page
-    .getByRole("listbox", { name: /Assignment group/i })
-    .last()
-    .getByRole("option", { name: value, exact: true });
-  await expect(option).toBeVisible({ timeout: 30_000 });
-  await option.click();
+  await expect.poll(async () => await field.getAttribute("aria-expanded")).toBe("true");
+  await field.press("ArrowDown");
+  await field.press("Enter");
   await expect(field).toHaveValue(value);
 }
 
