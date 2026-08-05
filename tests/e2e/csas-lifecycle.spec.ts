@@ -131,8 +131,7 @@ async function fillShortDescription(page: Page, value: string): Promise<void> {
 }
 
 async function setAssignmentGroup(page: Page, value: string): Promise<void> {
-  const field = page.locator('input[name="assignment_group"]').last();
-  await expect(field).toBeVisible({ timeout: 30_000 });
+  const field = await editableField(page, [/Assignment group/i], ["assignment_group"], "Assignment group");
   await field.click();
   await field.press("Control+A");
   await field.fill(value);
